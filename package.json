@@ -1,0 +1,53 @@
+const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys')
+
+async function startBot() {
+    const { state, saveCreds } = await useMultiFileAuthState('auth')
+    const sock = makeWASocket({ auth: state, printQRInTerminal: true, browser: ["Keshan King", "Chrome", "1.0"] })
+    sock.ev.on('creds.update', saveCreds)
+    console.log("Keshan King Bot Started!")
+
+    sock.ev.on('messages.upsert', async (m) => {
+        const msg = m.messages[0]
+        if (!msg.message || msg.key.fromMe) return
+        const from = msg.key.remoteJid
+        const body = msg.message.conversation || msg.message.extendedTextMessage?.text || ""
+        if (!body.startsWith(".")) return
+
+        const args = body.slice(1).trim().split(/ +/)
+        const command = args.shift().toLowerCase()
+        const q = args.join(" ")
+
+        if (command === "menu") {
+            let txt = "*KESHAN KING BOT MENU* 🔥\n\n"
+            txt += "*.csong <yt link>,<channel jid>* - Channel ekata song danna\n"
+            txt += "*.ai <prashnaya>* - AI chat Sinhalen\n"
+            txt += "*.save* - Status save karaganna (status ekak reply karala)\n"
+            txt += "*.alive* - Bot on da balanna\n"
+            return sock.sendMessage(from, { text: txt })
+        }
+
+        if (command === "alive") {
+            return sock.sendMessage(from, { text: "✅ *KESHAN KING BOT ONLINE* - Wada karanawa!" })
+        }
+
+        if (command === "csong") {
+            if (!q.includes(",")) return sock.sendMessage(from, { text: "Use:.csong https://youtu.be/xxx, 1203630xxx@newsletter" })
+            let [link, jid] = q.split(",").map(a=>a.trim())
+            await sock.sendMessage(from, { text: `🎵 Channel ekata danawa: ${jid}` })
+            try {
+                await sock.sendMessage(jid, { audio: { url: link }, mimetype: 'audio/mp4', caption: "Uploaded by KESAN KING BOT" })
+                await sock.sendMessage(from, { text: "✅ Channel ekata damma!" })
+            } catch(e){ await sock.sendMessage(from, { text: "Error: JID eka hari da kiyala balanna" }) }
+        }
+
+        if (command === "ai") {
+            if (!q) return sock.sendMessage(from, { text: "Mokak hari ahanna. Ex:.ai kohomada machan" })
+            return sock.sendMessage(from, { text: `*KESHAN AI* 🤖\n\nOya ahuwe: "${q}"\n\nMama oyage Sinhala AI. Me gana wistharayak kiyannam. Thawa monawada danna one?` })
+        }
+
+        if (command === "save") {
+            return sock.sendMessage(from, { text: "Status ekak reply karala.save gahanna. Mama eka save karala dennam ⬇️" })
+        }
+    })
+}
+startBot()
